@@ -56,7 +56,7 @@
 
 ## Первая неделя Белого Пояса
 
-1. `std::cin >> a >> b >> c;` работает именно так как, тебе хочется.
+1. `std::cin >> a >> b >> c;` работает именно так, как тебе хочется.
 
 2. Перебрать слово по буквам можно с помощью `str_prot.at(i)`, где `i` - индекс буквы в слове `str_prot`. Метод вернет букву, разумеется. <!--Миллениалы изобрели разыменование по индексу а-ля str_prot[i]-->. Вывод - <u>с</u><u>троки всё ещё массив чаров</u>, как и в Си.
 
@@ -504,9 +504,7 @@ hello
 
 ### Введение в структуры и классы
 
-#### Класс 
-
-##### Изменяем неизменяемое
+#### Изменяем неизменяемое
 
 Рассмотрим сниппет с, казалось бы, приватным полем `string name`;
 
@@ -543,7 +541,7 @@ int main(void)
 
 Дело в том, что `GetName` возвращает нам *ссылку* на строку, по которой мы можем написать всё, что душе угодно!!
 
-##### Методы в структурах
+#### Методы в структурах
 
 Удивительно, но факт. В структурах есть методы и они работаю так, как будто это класс, у которого всё `public`
 
@@ -565,6 +563,71 @@ int main(void)
     dog.voice = "Bark";
     cat.Say(); 			//Мяукнет
     dog.Say();			//Гавкнет
+    return 0;
+}
+```
+
+#### Количество `public` и `private`
+
+Секции public и private в определении класса могут повторяться любое количество раз и располагаться в любом порядке.  
+
+#### Константность методов
+
+Рассмотрим следующий кусок кода:
+
+```c++
+#include <iostream>
+
+using namespace std;
+
+class Human
+{
+    public:
+    void SetAge(int _age)
+    {
+        age = _age;
+    }
+    void SetHeight(double _h)
+    {
+        height = _h;
+    }
+    void SetName(string _n)
+    {
+        name = _n;
+    }
+    int GetAge() const
+    {
+        return age;
+    }
+    double GetHeight() const
+    {
+        return height;
+    }
+    string GetName() const
+    {
+        return name;
+    }
+    private:
+    int age;
+    double height;
+    string name;
+};
+
+void PrintHuman(const Human& man);
+void PrintHuman(const Human& man)
+{
+    cout << "Name: " << man.GetName() << endl;
+    cout << "Age: " << man.GetAge() << endl;
+    cout << "Height: " << man.GetHeight() << endl;
+}
+
+int main(void)
+{
+    Human Alex;
+    Alex.SetAge(10);
+    Alex.SetHeight(150.5);
+    Alex.SetName("Alex");
+    PrintHuman(Alex);
     return 0;
 }
 ```
