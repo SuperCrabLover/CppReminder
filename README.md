@@ -473,3 +473,99 @@ int main(void)
 }
 ```
 
+### Видимость и инициализация переменных
+
+Скомпилируется ли следующий код?
+
+```c++
+#include <iostream>
+
+using namespace std;
+int main(void)
+{
+	string s = "Hello";
+    {
+        string s = "world!";
+        cout << s << endl;
+    }
+    cout << s << endl;
+    return 0;
+}
+```
+
+Если не указан `-Wshadow` при компиляции, то код скомпилируется и даже выполнится с выводом:
+
+````
+world!
+hello
+````
+
+В данном случае происходит так называемое "затенение" переменной `s`.
+
+### Введение в структуры и классы
+
+#### Класс 
+
+##### Изменяем неизменяемое
+
+Рассмотрим сниппет с, казалось бы, приватным полем `string name`;
+
+```C++
+#include <iostream>
+#include <string>
+using namespace std;
+
+class Human
+{
+public:
+    string& GetName()
+    {
+        return name;
+    }
+    void SetName(string _name)
+    {
+        name = _name;
+    }
+private:
+    string name;
+};
+
+int main(void)
+{    
+    Human guy;
+    guy.SetName("Denis");         //герой явно мужчина - имя Денис
+    cout << guy.GetName() << endl;//Вывод: Denis\n
+    guy.GetName() = "Kate";	      //Поле name приватное - ничего у вас не выйдет! Или нет!?
+    cout << guy.GetName() << endl;//Вывод: Kate\n
+    return 0;
+}
+```
+
+Дело в том, что `GetName` возвращает нам *ссылку* на строку, по которой мы можем написать всё, что душе угодно!!
+
+##### Методы в структурах
+
+Удивительно, но факт. В структурах есть методы и они работаю так, как будто это класс, у которого всё `public`
+
+```c++
+#include <iostream>
+#include <string>
+using namespace std;
+
+struct Animal
+{
+    void Say(){ cout << voice << endl;};
+    string voice;
+};
+
+int main(void)
+{    
+    Animal cat, dog;
+    cat.voice = "Meow";
+    dog.voice = "Bark";
+    cat.Say(); 			//Мяукнет
+    dog.Say();			//Гавкнет
+    return 0;
+}
+```
+
