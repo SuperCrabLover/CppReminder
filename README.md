@@ -54,6 +54,26 @@
    */
   ```
 
+- Вернуть пустой(ое) словарь/вектор/множество
+
+  ```c++
+  #include <iostream>
+  #include <vector>
+  using namespace std;
+  
+  vector<int> GetVect(bool is_empty)
+  {
+      if (is_empty)
+      {
+          return {};
+      }
+      else
+      {
+          return {2, 4, 12};
+      }
+  }
+  ```
+
   
 
 ## Первая неделя Белого Пояса
@@ -347,8 +367,6 @@ int main(void)
  */
 ```
 
-
-
 #### count_if
 
 Позволяет осуществить подсчет элементов по условию. На вход заместо элемента принимает функцию, которая должна возвращать значения типа `bool`, а принимать на вход элемент контейнера: `count(range1, range2, func)`Пример:
@@ -495,7 +513,7 @@ int main(void)
 }
 ```
 
-Если не указан `-Wshadow` при компиляции, то код скомпилируется и даже выполнится с выводом:
+Если не указан `-Wshadow` при компиляции, то код скомпилируется и выполнится с выводом:
 
 ````
 world!
@@ -573,7 +591,7 @@ int main(void)
 
 Секции public и private в определении класса могут повторяться любое количество раз и располагаться в любом порядке.  
 
-#### Константность методов
+### Константность методов
 
 Рассмотрим следующий кусок кода:
 
@@ -597,15 +615,15 @@ class Human
     {
         name = _n;
     }
-    int GetAge() const
+    int GetAge() const //константный метод -- то есть метод не меняет текущий объект
     {
         return age;
     }
-    double GetHeight() const
+    double GetHeight() const //константный метод -- то есть метод не меняет текущий объект
     {
         return height;
     }
-    string GetName() const
+    string GetName() const //константный метод -- то есть метод не меняет текущий объект
     {
         return name;
     }
@@ -618,8 +636,8 @@ class Human
 void PrintHuman(const Human& man);
 void PrintHuman(const Human& man)
 {
-    cout << "Name: " << man.GetName() << endl;
-    cout << "Age: " << man.GetAge() << endl;
+    cout << "Name: " << man.GetName() << endl;  //так как методы константные, то их вызов
+    cout << "Age: " << man.GetAge() << endl;    //не изменит объект man
     cout << "Height: " << man.GetHeight() << endl;
 }
 
@@ -633,4 +651,206 @@ int main(void)
     return 0;
 }
 ```
+
+Вся суть сниппета в использовании функции `void PrintHuman(const Human& man)`, легко заметить, что на вход она принимает *константную* ссылку на класс `Human`. Это крайне логично -- мы не хотим копировать лишний раз экземпляр класса, но и менять ничего не собираемся, однако компилятору это может быть и не очевидно. 
+
+Внимательный читатель обратит свой взор на странные методы в этом классе ` int GetAge() const`, `double GetHeight() const` и`string GetName() const`. Эти `const` как раз и говорят компилятору, что методы никак не смогут изменить объект, то есть `const` в `void PrintHuman(const Human& man)` будет соблюдаться, если из неё вызвать эти методы.
+
+### Конструкторы
+
+#### Знакомство
+
+*Конструктор* - специальный метод класса, у которого нет возвращаемого значения, с названием совпадающим с названием класса. 
+
+Пример:
+
+```c++
+#include <iostream>
+using namespace std;
+
+class Human
+{
+    public:
+    Human(const string& _name) //Тот самый
+    {
+        name = _name;
+    }
+    void SetName(string _n)
+    {
+        name = _n;
+    }
+    string GetName() const
+    {
+        return name;
+    }
+    private:
+    string name;
+};
+
+void PrintHuman(const Human& man);
+void PrintHuman(const Human& man)
+{
+    cout << "Name: " << man.GetName() << endl;
+}
+
+int main(void)
+{
+    //Human Alex; - теперь так создать объект не получится - программа не скомпилируется, но зато можно вот так:  		
+    Human Alex("Alex");  //Создали объект класса Human сразу с именем "Alex"
+    PrintHuman(Alex);
+    return 0;
+}
+/*Output:
+ *Name: Alex
+ */
+```
+
+Обратите внимание, что в части "Константность методов" похожий объект создавался с помощью отдельных методов. 
+
+**Важно**: конструктор, добавленный в `private`, как и любой приватный метод, нельзя будет вызвать снаружи класса.
+
+#### Конструкторы по умолчанию
+
+Как видно в примере выше строка кода `Human Alex;` теперь будет провоцировать ошибку компиляции, это связано с тем, что отсутствует так называемый конструктор по умолчанию:
+
+```c++
+#include <iostream>
+using namespace std;
+
+class Human
+{
+    public:
+    Human()					   //Конструктор по умолчанию, раньше компилятор добавлял его в класс сам
+    {
+        name = "None";
+    } 				   
+    Human(const string& _name) //Конструктор, требующий константную ссылку на строку в качестве параметра
+    {
+        name = _name;
+    }
+    void SetName(string _n)
+    {
+        name = _n;
+    }
+    string GetName() const
+    {
+        return name;
+    }
+    private:
+    string name;
+};
+
+void PrintHuman(const Human& man);
+void PrintHuman(const Human& man)
+{
+    cout << "Name: " << man.GetName() << endl;
+}
+
+int main(void)
+{
+    Human Alex;  //Создали объект класса Human с помощью конструктора по умолчанию
+    PrintHuman(Alex);
+    //Аналогично будут работать:
+   	//PrintHuman(Human());
+    //PrintHuman({}); <-- тут тип понятен из заголовка функции void PrintHuman(const Human& man)
+    //PrintHuman({"Alex"}); <-- выведет Name: Alex
+    return 0;
+}
+/*Output:
+ *Name: None
+ */
+```
+
+##### Пример использования
+
+```c++
+#include <iostream>
+using namespace std;
+
+class Human
+{
+    public:
+    Human()
+    {
+        name = "None";
+    }
+    Human(const string& _name)
+    {
+        name = _name;
+    }
+    void SetName(string _n)
+    {
+        name = _n;
+    }
+    string GetName() const
+    {
+        return name;
+    }
+    private:
+    string name;
+};
+
+void PrintHuman(const Human& man);
+void PrintHuman(const Human& man)
+{
+    cout << "Name: " << man.GetName() << endl;
+}
+
+Human CreateHuman(bool is_nameless);
+Human CreateHuman(bool is_nameless)
+{
+    if (is_nameless == true)
+    {
+        return {};
+    }
+    else
+    {
+        return {"Smith"};
+    }
+}
+int main(void)
+{
+    PrintHuman(CreateHuman(true)); 
+    return 0;
+}
+/*Output:
+ *Name: None
+ */
+```
+
+Функция `Human CreateHuman(bool is_nameless)` с помощью конструктора по умолчанию возвращает либо безымянного человека, либо очередного Смита.
+
+#### Конструктор в структурах
+
+Конструкторов для структур не бывает, но зато существуют значения по умолчанию:
+
+````C++
+#include <iostream>
+#include <vector>
+using namespace std;
+
+struct Human
+{
+	int age = 0;
+	string name = "No name";
+	string surname = "No surname";
+};
+
+int main(void)
+{
+    Human Alex;
+    cout << "Age: " << Alex.age << "\n" << "Name: " << Alex.name << "\n" << "Surname: " << Alex.surname << endl;
+    Human Dima = {20, "Dima"};
+    cout << "Age: " << Dima.age << "\n" << "Name: " << Dima.name << "\n" << "Surname: " << Dima.surname << endl;
+    return 0; 
+}
+/*Output:
+ *Age: 0
+ *Name: No name
+ *Surname: No surname
+ *Age: 20
+ *Name: Dima
+ *Surname: No surname
+ */
+````
 
