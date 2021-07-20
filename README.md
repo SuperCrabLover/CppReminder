@@ -303,9 +303,9 @@ int main(void)
 
 ```c++
 ...
-set<string> famous_people = {"Slava Marlow", "Oxxxymiron", "Morgenshtern", "Oxxxymiron"}; // оптическая иллюзия - в множестве лишь один Оксимирон
+set<string> famous_people = {"Slava Marlow", "Oxxxymiron", "Morgenshtern", "Oxxxymiron"}; // оптическая иллюзия - в множестве Оксимирон лишь в одном экземпляре
 set<string> other_famous_people = {"Slava Marlow", "Oxxxymiron", "Morgenshtern"};
-cout << (famous_people == other_famous_people) << endl; //Вывдет 1.
+cout << (famous_people == other_famous_people) << endl; //Выведет 1.
 ...
 ```
 
@@ -854,7 +854,7 @@ int main(void)
  */
 ````
 
-#### Деструкторы
+### Деструкторы
 
 *Деструкторы* - специальные методы, которые используются при уничтожении объекта. Назначение деструкторов - откат действий, сделанных в конструкторе и других методах:
 
@@ -876,7 +876,7 @@ class Human {
       age = _age;
     }
     ~Human() { //непосредственно сам деструктор класса Human
-        cout << name << " of age " << age << " was destroyed" << endl;
+      cout << name << " of age " << age << " was destroyed" << endl;
     }
   private:
     string name;
@@ -892,4 +892,93 @@ int main(void) {
  *Alex of age 20 was destroyed
  */
 ```
+
+### Время жизни объекта
+
+#### Порядок уничтожения объектов
+
+В каком порядке будут уничтожаться объекты в сниппете ниже?
+
+```c++
+#include <iostream>
+
+using namespace std;
+
+class Human {
+  public:
+    Human(const string& _name, int _age){ 
+      name = _name;
+      age = _age;
+    }
+    ~Human() {
+      cout << name << " of age " << age << " was destroyed" << endl;
+    }
+  private:
+    string name;
+    int age;
+};
+
+int main(void) {
+  Human person1("Alex", 20); 
+  Human person2("Max", 20);
+  return 0;
+}   
+```
+
+Ответ, **в обратном порядке относительно создания**:
+
+```
+Max of age 20 was destroyed
+Alex of age 20 was destroyed
+```
+
+Подобно стеку - последним пришёл, первым ушёл.
+
+#### Уничтожение объекта, переданного в качестве параметра функции
+
+```C++
+#include <iostream>
+
+using namespace std;
+
+class Human {
+  public:
+    Human() {
+      name = "Ivan";
+      age = 18;
+      cout << "Default constructed" << endl;
+    }
+    Human(const string& _name, int _age){ 
+      name = _name;
+      age = _age;
+    }
+    ~Human() {
+        cout << name << " of age " << age << " was destroyed" << endl;
+    }
+  private:
+    string name;
+    int age;
+};
+
+void TestFun (const Human& man);
+void TestFun (const Human& man) {
+    cout << 2 << endl;;
+}
+
+int main(void) {
+  cout << 1 << endl;
+  TestFun({});
+  cout << 3 << endl;
+  return 0;
+}
+/*Output:
+ *1
+ *Default constructed
+ *2
+ *Ivan of age 18 was destroyed
+ *3
+ */
+```
+
+**Вывод**: объект, переданный продемонстрированным образом в функцию, будет удалён при выходе из этой функции, как и все её локальные переменные и остальные параметры. 
 
