@@ -854,3 +854,42 @@ int main(void)
  */
 ````
 
+#### Деструкторы
+
+*Деструкторы* - специальные методы, которые используются при уничтожении объекта. Назначение деструкторов - откат действий, сделанных в конструкторе и других методах:
+
+-  Закрытие открытого файла
+- Освобождение выделенной вручную памяти
+- Прочее (всё, что кажется полезным в зависимости от ситуации)
+
+Пример:
+
+```C++
+#include <iostream>
+
+using namespace std;
+
+class Human {
+  public:
+    Human(const string& _name, int _age) { 
+      name = _name;
+      age = _age;
+    }
+    ~Human() { //непосредственно сам деструктор класса Human
+        cout << name << " of age " << age << " was destroyed" << endl;
+    }
+  private:
+    string name;
+    int age;
+};
+
+int main(void) {
+  Human person("Alex", 20); 
+  return 0;
+}// В данном месте person будет уничтожена компилятором, поэтому сработает наш деструктор:
+
+/*Output:
+ *Alex of age 20 was destroyed
+ */
+```
+
