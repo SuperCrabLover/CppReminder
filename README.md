@@ -822,7 +822,7 @@ int main(void)
 
 #### Конструктор в структурах
 
-Конструкторов для структур не бывает, но зато существуют значения по умолчанию:
+Рассмотрим код ниже:
 
 ````C++
 #include <iostream>
@@ -834,23 +834,33 @@ struct Human
 	int age = 0;
 	string name = "No name";
 	string surname = "No surname";
+    Human(int _age, string _name, string _surname) 
+    {
+        age = _age;
+        name = _name;
+        surname = _surname;
+    }
+    Human() {}
 };
 
 int main(void)
 {
-    Human Alex;
+    Human Alex(20, "Alex", "Ivanov");
+    Human Unknown;
+    cout << "Unknown's Surname : "<< Dron.surname << endl;
     cout << "Age: " << Alex.age << "\n" << "Name: " << Alex.name << "\n" << "Surname: " << Alex.surname << endl;
-    Human Dima = {20, "Dima"};
+    Human Dima = {20, "Dima", "Ivanov"};
     cout << "Age: " << Dima.age << "\n" << "Name: " << Dima.name << "\n" << "Surname: " << Dima.surname << endl;
     return 0; 
 }
 /*Output:
- *Age: 0
- *Name: No name
- *Surname: No surname
+ *Unknown's Surname : No surname
+ *Age: 20
+ *Name: Alex
+ *Surname: Ivanov
  *Age: 20
  *Name: Dima
- *Surname: No surname
+ *Surname: Ivanov
  */
 ````
 
@@ -981,4 +991,10 @@ int main(void) {
 ```
 
 **Вывод**: объект, переданный продемонстрированным образом в функцию, будет удалён при выходе из этой функции, как и все её локальные переменные и остальные параметры. 
+
+## Четвертая неделя Белого Пояса
+
+### Полезные структуры и классы
+
+#### Структура `Date`
 
