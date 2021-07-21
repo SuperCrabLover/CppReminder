@@ -826,7 +826,6 @@ int main(void)
 
 ````C++
 #include <iostream>
-#include <vector>
 using namespace std;
 
 struct Human
@@ -994,7 +993,98 @@ int main(void) {
 
 ## Четвертая неделя Белого Пояса
 
-### Полезные структуры и классы
+### Неявные преобразования
 
-#### Структура `Date`
+Рассмотрим сниппет, в котором написана структура `Date`. На первый взгляд, всё сделано так, чтобы пользующийся структурой всегда понимал, где в конструкторе `Date` день, где месяц, а где год. Однако не всё так гладко:
+
+```C++
+#include <iostream>
+using namespace std;
+
+struct Day {
+  int value;
+  Day (int v) { 		//Теперь компилятор умеет создавать из int тип Day
+    value = v;
+  }
+};
+
+struct Month {
+  int value;
+  Month (int v) {		//Теперь компилятор умеет создавать из int тип Month
+    value = v;
+  }
+};
+
+struct Year {		    
+  int value;
+  Year (int v) {		//Теперь компилятор умеет создавать из int тип Year
+    value = v;
+  }
+};
+
+struct Date {
+  int day;
+  int month;
+  int year;
+  Date(Day new_day, Month new_month, Year new_year) {
+      day = new_day.value;
+      month = new_month.value;
+      year = new_year.value;
+  }
+};
+
+void PrintDate(const Date& d);
+void PrintDate(const Date& d) {
+  cout << d.day << "." << d.month << "." << d.year << endl;
+}
+
+int main(void) {
+  Date new_date = {10, 11, 12}; //Что из этого день, месяц и год? Почему это компилируется?
+  PrintDate(new_date); 
+  return 0;
+}
+```
+
+Добавив в структуры `Day`, `Month` и `Year` конструкторы, мы научили программу приводить тип `int` к соответствующему типу, поэтому в строке `Date new_date = {10, 11, 12};` **неявное приведение типов!** Компилятор автоматически создает из `10` тип `Day`, из `11` - `Month` и из `12` - `Year`.
+
+*Как запретить компилятору неявно преобразовывать тип?*
+
+Добавим слово `explicit`, что значит "явный", в объявлении конструкторов в структурах:
+
+```C++
+#include <iostream>
+using namespace std;
+
+struct Day {
+  int value;
+  explicit Day (int v) { 		//Теперь компилятор умеет создавать из int тип Day, но только явно
+    value = v;
+  }
+};
+
+struct Month {
+  int value;
+  explicit Month (int v) {		//Теперь компилятор умеет создавать из int тип Month, но только явно
+    value = v;
+  }
+};
+
+struct Year {		    
+  int value;
+  explicit Year (int v) {		//Теперь компилятор умеет создавать из int тип Year, но только явно
+    value = v;
+  }
+};
+```
+
+Теперь это `Date new_date = {10, 11, 12};` и даже это `Date new_date = {{10}, {11}, {12}}; ` не сработает, поэтому придётся делать это явно, что улучшит читабельность: 
+
+```C++
+...
+  Date new_date = {Day(10), Month(11), Year(12)};
+  //Либо вот так: Date new_date = {Day{10}, Month{11}, Year{12}};
+... 
+```
+
+### Класс `Function`
 
