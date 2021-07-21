@@ -1086,5 +1086,172 @@ struct Year {
 ... 
 ```
 
-### Класс `Function`
+### Универсализация кода с помощью классов на примере класса функций
+
+#### Постановка проблемы
+
+Пусть имеется некая программа для работы с картинками, которые описываются структурой `Image`:
+
+```c++
+struct Image {
+  double quality;
+  double freshness;
+};
+```
+
+Для работы с картинками определяются две функции:
+
+```c++
+struct Params {
+  double a;
+  double b;
+}; //Вспомогательная структура для вычисления
+
+//Вычисление веса происходит по формуле: weight = quality - freshness * a + b
+double ComputeImageWeight (const Params& params, const Image& image) {
+  double weight = image.quality;
+  weight -= image.freshness * params.a + params.b;
+  return weight;
+}
+
+//Существует также и обратная функция, которая по весу сообщает свежесть
+double ComputeQualityByWeight(const Params& params, const Image& image, double weight) {
+  double quality = weight;
+  quality += image.freshness * params.a + params.b;
+  return quality;
+}
+```
+
+И вот нам говорят, что в структуру `Image` необходимо добавить ещё одно поле `double rating`, и всё бы ничего, однако `rating` участвует в формуле вычисления веса, поэтому необходимые изменения примут вид:
+
+```c++
+struct Image {
+  double quality;
+  double freshness;
+  double rating;
+};
+
+struct Params {
+  double a;
+  double b;
+  double c; // константа для учёта rating в формуле 
+};
+
+//Вычисление веса происходит по формуле: weight = quality - freshness * a + b + rating * c
+double ComputeImageWeight (const Params& params, const Image& image) {
+  double weight = image.quality;
+  weight -= image.freshness * params.a + params.b;
+  weight += image.rating * params.c;
+  return weight;
+}
+
+//Изменения коснутся и второй фуникци
+double ComputeQualityByWeight(const Params& params, const Image& image, double weight) {
+  double quality = weight;
+  quality += image.freshness * params.a + params.b;
+  quality -= image.rating * params.c;
+  return quality;
+}
+```
+
+*-Так в чём же проблема? Поменяли структуру - поменяем и функции*. 
+
+Действительно, в данном примере всё выглядит цивильно, однако, если функции больше, то можно случайно забыть поменять одну из них и тогда, всё станет в лучшем случае **очень плохо**. Существует назойливая проблема - проблема модификации. Помимо неё - неявное дублирование кода.
+
+#### Решение проблемы
+
+Создадим класс `Function`, который будет олицетворять функцию вычисления нашей формулы, и функцию `Function MakeWeightFunction(const Params& params, const Image& image)`, возвращающую нам нужный объект класса `Function`. Тогда функции `ComputeImageWeight` и `ComputeQualityByWeight` примут вид:
+
+```c++
+#include <vector>
+#include <algorithm>
+#include <iostream>
+
+using namespace std;
+
+struct Image {
+  double quality;
+  double freshness;
+  double rating;
+};
+
+struct Params {
+  double a;
+  double b;
+  double c; // константа для учёта rating в формуле 
+};
+
+//Вспомогательный класс, объекты которого содержат пары "операция - текущее значение"
+class FunctionParts {
+  public:
+    FunctionParts(char new_operation, double new_value)  {
+      operation = new_operation;
+      value = new_value;
+    }
+    double Apply(double source_value) const {
+      if (operation == '+') {
+        return source_value + value;
+      } else {
+        return source_value - value;
+      }
+    }
+    void Invert() {
+      if (operation == '+') {
+        operation = '-';
+      } else {
+        operation = '+';
+      }
+    }
+  private:
+    char operation;
+    double value;  
+};
+
+class Function {
+  public:
+    double Apply(double value) const {
+      for (const FunctionParts& part : parts) {
+        value = part.Apply(value);
+      }
+      return value;
+    }
+    void Invert() {
+      for (FunctionParts& part : parts) {
+        part.Invert();
+      }
+      reverse(begin(parts), end(parts));
+    }
+    void AddPart(char operation, double value) {
+      parts.push_back(FunctionParts(operation, value));
+    }
+  private:
+    vector<FunctionParts> parts;
+};
+
+Function MakeWeightFunction(const Params& params, const Image& image) {
+  Function function;
+  //Функция как-то создает обхект по паметрам
+  function.AddPart('-', image.freshness * params.a + params.b);
+  function.AddPart('+', image.rating * params.c);
+  return function;
+}
+
+//Вычисление веса происходит по формуле: weight = quality - freshness * a + b + rating * c
+double ComputeImageWeight (const Params& params, const Image& image) {
+  Function function = MakeWeightFunction(params, image);
+  return function.Apply(image.quality); 
+}
+
+//Изменения коснутся и второй фуникци
+double ComputeQualityByWeight(const Params& params, const Image& image, double weight) {
+  Function function = MakeWeightFunction(params, image);
+  //Обращаем полученную функцию
+  function.Invert();
+  return function.Apply(weight);
+}
+```
+
+Теперь вся работа с формулой состоит в обращение к `Function function` и менять формулу можно из одного места - `MakeWeightFunction`.
+
+
 
