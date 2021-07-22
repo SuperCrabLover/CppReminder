@@ -1308,9 +1308,11 @@ int main(void) {
  */
 ```
 
-`getline` **первым аргументом** принимает **поток**, откуда мы собираемся читать, а **вторым строку**, в которую мы планируем поместить прочитанное. Исходя из названия, данная **функция считывает символы в строку до первого** `'\n'`
+`getline` **первым аргументом** принимает **поток**, откуда мы собираемся читать, а **вторым строку**, в которую мы планируем поместить прочитанное. Исходя из названия, данная **функция считывает символы в строку до первого** `'\n'` (`\n` при этом в строку не входит).
 
-**Замечание**: если в примере выше продублировать строчки  `getline(input, line); cout << line << endl;` ещё один раз, то вывод программы будет таким:
+***А что будет, если считать строку ещё раз?***
+
+Если в примере выше продублировать строчки  `getline(input, line); cout << line << endl;` ещё один раз, то вывод программы будет таким:
 
 ```C++
 /*Output:
@@ -1320,6 +1322,224 @@ int main(void) {
  */
 ```
 
-**Объяснение**: в данном случае `getline` уже в третий раз не срабатывает так, как нужно и оставляет переменную `line` неизменной!
+***Объяснение***: в данном случае `getline` уже в третий раз не срабатывает так, как нужно и оставляет переменную `line` неизменной!
 
-TODO: продолжить конспект с 3:52.
+***А как же тогда понять, что считывать больше ненужно?*** 
+
+Оказывается `getline` возвращает ссылку на поток, из которого она читает строчки. Ссылку на поток можно преобразовать в `bool`: `true`, если файл ещё не кончился и можно считать следующую строчку и `false` иначе. Тогда **готовый код** примет вид:
+
+```C++
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using namespace std;
+int main(void) {
+  ifstream input("TestFile.txt");
+  string line;
+  while (getline(input, line)) {
+    cout << line << endl;   
+  } 
+  return 0;
+}
+/*Output:
+ *Hello world!
+ *second line
+ */
+```
+
+#### Аккуратное создание потока
+
+***Что если мы ошиблись в названии файла?***
+
+Чтобы программа сказала нам, что она не может открыть файл, наш код нужно подкорректировать:
+
+````C++
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using namespace std;
+int main(void) {
+  ifstream input("TestFile1.txt");
+  string line;
+  if (input.is_open() == false) {    //этот код можно упростить до if (!input)
+    cout << "File open fail" << endl;
+    return 0;
+  }
+  while (getline(input, line)) {
+    cout << line << endl;   
+  } 
+  return 0;
+}
+````
+
+#### Чтение данных через разделитель
+
+Пусть нам нужно прочитать дату в формате 'year-month-day'. `TestFile.txt`:
+
+```
+2017-01-25
+```
+
+Тогда считать необходимое можно так:
+
+```c++
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using namespace std;
+int main(void) {
+  string file_name = "TestFile.txt";
+  ifstream input(file_name);
+  if (!input) {
+    cout << "Error! Can not open a file with name: " << file_name << endl;
+  }
+  string year, month, day;  
+  getline(input, year, '-');
+  getline(input, month, '-');
+  getline(input, day, '-');
+  cout << "Year: " << year << " Month: " << month << " Day: " << day << endl;
+  return 0;
+}
+/*Output:
+ *Year: 2017 Month: 01 Day: 25
+ */
+```
+
+#### Чтение через операции ввода-вывода
+
+Будем считывать то же самое из того же файла, что и выше, только другим способом:
+
+````c++
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using namespace std;
+int main(void) {
+  string file_name = "TestFile.txt";
+  ifstream input(file_name);
+  if (!input) {
+    cout << "Error! Can not open a file with name: " << file_name << endl;
+  }
+  int year, month, day;
+  year = 0;
+  month = 0;
+  day = 0;  
+  input >> year;   //считали 2017
+  input.ignore(1); //проигнорировали -
+  input >> month;  //счиатли 01
+  input.ignore(1); //проигнорировали -
+  input >> day;    //считали 25
+  cout << "Year: " << year << " Month: " << month << " Day: " << day << endl;
+  return 0;
+}
+/*Output:
+ *Year: 2017 Month: 01 Day: 25
+ */
+````
+
+#### Запись в файл
+
+Запишем в файл `TestFile.txt` некую фразу.
+
+##### Запись с удалением 
+
+```C++
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using namespace std;
+void ReadAll(const string& file_name);
+void ReadAll(const string& file_name) {
+  ifstream input(file_name);
+  if (input) {
+    string line;
+    while (getline(input, line)) {
+      cout << line << endl;
+    }
+  } else {
+    cout << "ReadAll: cannot open file named " << file_name << endl;
+  }
+}
+
+int main(void) {
+  string file_name = "TestFile.txt";
+  ofstream output(file_name);         //Содержимое файла удаляется и перезаписывается 
+  if (output) {
+    output << "Hello world!" << endl; //если в данной строке не выводить endl то ReadAll ничего не прочтёт
+  } else {
+    cout << "Error! Can not open the file " << file_name << endl;
+  }
+  ReadAll(file_name);
+  return 0;
+}
+```
+
+##### Запись с дополнением
+
+```C++
+#include <iostream>
+#include <fstream>
+#include <string>
+
+using namespace std;
+void ReadAll(const string& file_name);
+void ReadAll(const string& file_name) {
+  ifstream input(file_name);
+  if (input) {
+    string line;
+    while (getline(input, line)) {
+      cout << line << endl;
+    }
+  } else {
+    cout << "ReadAll: cannot open file named " << file_name << endl;
+  }
+}
+
+int main(void) {
+  string file_name = "TestFile.txt";
+  ofstream output(file_name, ios::app); //открываем файл на дописывание в конец 
+  if (output) {
+    output << "Hello world!" << endl;   //если в данной строке не выводить endl то ReadAll ничего не прочтёт
+  } else {
+    cout << "Error! Can not open the file " << file_name << endl;
+  }
+  ReadAll(file_name);
+  return 0;
+}
+```
+
+#### Потоковые манипуляторы или форматирование вывода
+
+```c++
+#include <iomanip>
+
+cout << fixed;           //для вывода double с фиксированной точностью (не черех экспоненту, а через точку)
+
+cout << setprecision(2); //количество знаков после запятой теперь 2
+
+cout << setw(10);        //задаем ширину вывода в символах для следующего вывода (сбрасывается после каждого вывода)
+
+/*пример: 
+*no setw: [42]
+*setw(6): [    42]
+*/
+
+cout << setfill('.')    //заполняем всё пустое пространство в выводе точкой
+/*пример: 
+*no setw: [42]
+*setw(6): [....42] <--- в ввыводе 6 символов
+*/
+
+cout << left           //выводим что-то слева в окошке с width
+/*пример: 
+*no setw: [42]
+*setw(6): [42....] <--- в ввыводе 6 символов
+*/
+
+```
+
