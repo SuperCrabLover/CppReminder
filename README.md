@@ -1622,3 +1622,82 @@ int main(void) {
  */
 ```
 
+### Перегрузка операторов + <
+
+**Обозначения: ** lhs => *left hand side*, rhs => *right hand side*
+
+Научим программу складывать наши типы, а так же сравнивать их:
+
+```C++
+#include <iostream>
+#include <string>
+#include <iomanip>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+struct Duration {
+  int hour;
+  int min;
+  Duration(int _hour = 0, int _min = 0) {
+    int total = _hour * 60 + _min;
+    hour = total / 60;
+    min = total % 60;
+  }
+};
+
+ostream& operator<<(ostream& stream, const Duration& d) {
+  stream << setfill('0');
+  stream << setw(2) << d.hour << ":" << setw(2) << d.min ;
+  return stream;
+} 
+
+istream& operator>>(istream& stream, Duration& d) {
+    stream >> d.hour;
+    stream.ignore();
+    stream >> d.min;
+    return stream;
+}
+
+Duration operator+(const Duration& lhs, const Duration& rhs) {
+  return Duration(lhs.hour + rhs.hour, lhs.min + rhs.min); 
+}
+
+bool operator<(const Duration& lhs, const Duration& rhs) {
+    if (lhs.hour == rhs.hour) {
+      return lhs.min < rhs.min;
+    } else {
+      return lhs.hour < rhs.hour;
+    }
+}
+
+void PrintVector(const vector<Duration>& v) {
+    for (const Duration& e : v) {
+        cout << e << " ";
+    }
+}
+
+
+int main(void) {
+  Duration test(0, 35);
+  Duration test2(1, 25);
+  Duration test3 = test + test2;
+  cout << test3 << endl;
+  vector<Duration> v = {test2, test, test3};
+  PrintVector(v);
+  cout << "\n";
+  sort(begin(v), end(v));
+  PrintVector(v);
+  cout << "\n";
+  return 0; 
+}
+/*Output:
+*02:00
+*01:25 00:35 02:00 
+*00:35 01:25 02:00
+*/
+```
+
+
+
