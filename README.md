@@ -12,7 +12,7 @@
   g++ -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-declarations -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wswitch-default -Wundef -Werror -Wno-unused test.cpp  -g -o a
   ```
 
-- Для компилирования с `C++17` нужно добавить к коду выше  фразу` -std=c++17`
+- Для компилирования с `C++17` нужно добавить к коду выше  фразу  `-std=c++17`
 
 - Библиотека ввода-вывода `#include <iostream>`, а не `#include <stdio.h>`, хотя и она тоже
 
@@ -1624,6 +1624,90 @@ int main(void) {
  */
 ```
 
+#### Грамотная перегрузка операторов ввода и вывода
+
+Рассмотрим класс рациональных чисел:
+
+```C++
+#include <iostream>
+#include <map>
+#include <set>
+#include <vector>
+#include <numeric>
+using namespace std;
+
+class Rational {
+public:
+    Rational() {
+        num = 0;
+        denom = 1;
+    }
+
+    Rational(int numerator, int denominator) {
+    	const int g_c_d = gcd(numerator, denominator);
+		num = numerator / g_c_d;
+    	denom = denominator / g_c_d;
+   		if (denom < 0) {
+      		denom = -denominator;
+      		num = -numerator;
+    	}
+    }
+
+    int Numerator() const {
+        return num;
+    }
+
+    int Denominator() const {
+        return denom;
+    }
+
+private:
+    int num;
+    int denom;
+};
+ostream& operator<<(ostream& stream, const Rational& r);
+ostream& operator<<(ostream& stream, const Rational& r) {
+    stream << r.Numerator() << "/" << r.Denominator();
+    return stream;
+}
+
+istream& operator>>(istream& stream, Rational& r);
+istream& operator >> (istream& is, Rational& r) {
+  int n, d;
+  char c;
+
+  if (is) {
+      is >> n >> c >> d;
+      if (is) {
+          if (c == '/') {
+              r = Rational(n, d);
+          }
+          else {
+              is.setstate(ios_base::failbit);
+          }
+      }
+  }
+}
+```
+
+***Почему это <грамотно>?***
+
+```c++
+...
+istringstream s{"5*9"};
+Rational r;
+
+if (!(s >> r)) {
+  // Ожидаемо, мы должны попасть сюда из-за некорректного разделителя у 5*9...
+} else {
+  // ...но мы попадем сюда, если не будем использовать особый метод setstate и
+  // флаг ios_base::failbit
+}
+...
+```
+
+
+
 ### Перегрузка операторов + <
 
 **Обозначения: ** lhs => *left hand side*, rhs => *right hand side*
@@ -1700,6 +1784,3 @@ int main(void) {
 *00:35 01:25 02:00
 */
 ```
-
-
-
