@@ -1784,3 +1784,70 @@ int main(void) {
 *00:35 01:25 02:00
 */
 ```
+
+### Введение в исключения
+
+**Исключения** - специальный механизм языка `C++`, позволяющий отлавливать "неправильное" поведение кода и как-то его отлаживать. Рассмотрим пример:
+
+```c++
+#include <sstream>
+#include <iostream>
+#include <string>
+#include <iomanip>
+
+using namespace std;
+
+struct Date {
+  int year;
+  int month;
+  int day;
+};
+
+void EnsureNextSymbAndSkip(stringstream& stream);
+void EnsureNextSymbAndSkip(stringstream& stream) {
+  //Проверка следующего элемента
+  if (stream.peek() != '/') {
+    //Выкидываем исключение, если следующий символ не /
+    stringstream ss;
+    ss << "Expected / but got: " << char(stream.peek());
+    throw runtime_error(ss.str());
+  }
+  //Если всё хорошо то пропускаем /
+  stream.ignore();
+}
+
+Date ParseDate(const string& str);
+Date ParseDate(const string& str) {
+  stringstream stream(str);
+  Date date;
+  stream >> date.year;
+  EnsureNextSymbAndSkip(stream);
+  stream >> date.month;
+  EnsureNextSymbAndSkip(stream);
+  stream >> date.day; 
+  return date;
+}
+
+int main(void) {
+  string date_str("2017a01/25");
+  try
+  {
+    Date date = ParseDate(date_str);
+    cout << setw(2) << setfill('0') << date.day << '.';
+    cout << setw(2) << setfill('0') << date.month << '.';
+    cout << date.year;
+  }
+  catch(const exception& e)
+  {
+    //Выводим причину ошибки
+    std::cerr << e.what() << '\n';
+  }
+
+  return 0; 
+}
+/*Output:
+ *Expected / but got: a
+ */
+```
+
+ 
