@@ -1809,6 +1809,7 @@ void EnsureNextSymbAndSkip(stringstream& stream) {
   if (stream.peek() != '/') {
     //Выкидываем исключение, если следующий символ не /
     stringstream ss;
+    //Записываем причину ошибки в строчный поток, а затем выкидываем исключение в what() которого запишется эта строка:
     ss << "Expected / but got: " << char(stream.peek());
     throw runtime_error(ss.str());
   }
@@ -1821,8 +1822,10 @@ Date ParseDate(const string& str) {
   stringstream stream(str);
   Date date;
   stream >> date.year;
+  //Игнорируем разделитель если он /
   EnsureNextSymbAndSkip(stream);
   stream >> date.month;
+  //Игнорируем разделитель если он /
   EnsureNextSymbAndSkip(stream);
   stream >> date.day; 
   return date;
@@ -1832,6 +1835,8 @@ int main(void) {
   string date_str("2017a01/25");
   try
   {
+    //Здесь находится код, который потенциально может выкинуть исключение
+    //Если исключения нет, то выполнится код в этом бллке
     Date date = ParseDate(date_str);
     cout << setw(2) << setfill('0') << date.day << '.';
     cout << setw(2) << setfill('0') << date.month << '.';
@@ -1839,6 +1844,7 @@ int main(void) {
   }
   catch(const exception& e)
   {
+    //Если код выше выкинул исключение, то выполнится код в этом блоке 
     //Выводим причину ошибки
     std::cerr << e.what() << '\n';
   }
