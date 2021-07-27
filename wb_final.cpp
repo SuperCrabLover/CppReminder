@@ -88,9 +88,9 @@ istream& operator>>(istream& stream, Date& date) {
 
 ostream& operator<<(ostream& stream, const Date& date);
 ostream& operator<<(ostream& stream, const Date& date) {
-  cout << setw(4) << setfill('0') << date.GetYear() << "-";
-  cout << setw(2) << setfill('0') << date.GetMonth() << "-";
-  cout << setw(2) << setfill('0') << date.GetDay();
+  stream << setw(4) << setfill('0') << date.GetYear() << "-";
+  stream << setw(2) << setfill('0') << date.GetMonth() << "-";
+  stream << setw(2) << setfill('0') << date.GetDay();
   return stream;
 }
 
