@@ -64,6 +64,9 @@ private:
 };
 
 istream& operator>>(istream& stream, Date& date); 
+ostream& operator<<(ostream& stream, const Date& date);
+bool operator<(const Date& lhs, const Date& rhs);
+
 istream& operator>>(istream& stream, Date& date) {
   int year, day, month;
   char separator;
@@ -86,7 +89,6 @@ istream& operator>>(istream& stream, Date& date) {
   return stream;
 } 
 
-ostream& operator<<(ostream& stream, const Date& date);
 ostream& operator<<(ostream& stream, const Date& date) {
   stream << setw(4) << setfill('0') << date.GetYear() << "-";
   stream << setw(2) << setfill('0') << date.GetMonth() << "-";
@@ -94,7 +96,6 @@ ostream& operator<<(ostream& stream, const Date& date) {
   return stream;
 }
 
-bool operator<(const Date& lhs, const Date& rhs);
 bool operator<(const Date& lhs, const Date& rhs) {
   if (lhs.GetYear() == rhs.GetYear()) {
     if (lhs.GetMonth() == rhs.GetMonth()) {
