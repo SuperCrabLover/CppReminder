@@ -124,6 +124,105 @@
   }
   ```
 
+- Чтобы определить переменную в кейсе свитч-конструкции **необходимы** фигурные скобки:
+
+  ```C++
+  enum class RequestType {
+    ADD,
+    REMOVE,
+    NEGATE
+  };
+  
+  void ProcessRequest(
+      set<int>& numbers,
+      RequestType request_type,
+      int request_data) {
+    switch (request_type) {
+    case RequestType::ADD:
+      numbers.insert(request_data);
+      break;
+    case RequestType::REMOVE:
+      numbers.erase(request_data);
+      break;
+    case RequestType::NEGATE: {  // фигурные скобки обязательны
+      bool contains = numbers.count(request_data) == 1;
+      if (contains) {
+        numbers.erase(request_data);
+        numbers.insert(-request_data);
+      }
+      break;
+    }
+    default:
+      cout << "Unknown request" << endl;
+    }
+  }
+  ```
+  
+- Очевидное неприятное
+
+  ```C++
+  {
+      ...
+      uint64_t sum = 0;
+      int a, b, c;
+      cin >> a >> b >> c;  //Входне данные влезают в размер int'a
+      sum += a * b * c;    //А вот (a*b*c) не влезает в размер int'a, а приводится именно к нему :(
+      cout << sum << endl; //Видим переполнение :(
+  }
+  ```
+
+- Почти хороший способ сравнивать даты
+
+  ```C++
+  #include <iostream>
+  #include <vector>
+  
+  using namespace std;
+  
+  struct Date
+  {
+    int year;
+    int month;
+    int day;
+  };
+  
+  bool operator< (const Date& lhs, const Date& rhs) {
+    return vector<int>{lhs.year, lhs.month, lhs.day} < vector<int>{rhs.year, rhs.month, rhs.day};
+  }
+  
+  int main(void) {
+    cout << (Date{2021, 12, 31} < Date{2001, 9, 7}) << endl;
+    return 0;
+  }
+  /*Output:
+   *0
+   */
+  ```
+
+- Хороший способ сравнивать даты
+
+  ```C++
+  #include <iostream>
+  #include <tuple>
+  
+  using namespace std;
+  
+  struct Date
+  {
+    int year;
+    int month;
+    int day;
+  };
+  
+  tuple<const int&, const string&, const int&> GetRank(const Date& date) {
+    return tie(date.year, date.month, date.day);
+  }
+  
+  bool operator<(const Date& lhs, const Date& rhs) {
+    return GetRank(lhs) < GetRank(rhs);
+  }
+  ```
+
   
 
 ## Первая неделя Белого Пояса
@@ -1946,8 +2045,7 @@ int main(void) {
 
   1. Как правило, имеет размер $4$ байта
 
-- `size_t` - тип представления размеров
-
+- `size_t` - тип представления размеров (`unsigned`)
   1. Результат вызова `size()` для контейнера
   2. $4$ байта (на $32$-ух битных) и $8$ байт на (на $64$-ех битных)
 
@@ -2014,16 +2112,16 @@ int main(void) {
 }
 ```
 
-#### Enum'ы
+#### Enum'ы и его маленькие радости
 
 Рассмотрим их на примере работы обработки запросов. `void ProcessRequest(...)` принимает на вход ссылку на множество неких чисел, с которыми мы работаем, `ENUM` - тип запроса и некое третье число.
 
 ```C++
 enum class RequestType {
-  ADD,
-  REMOVE,
-  NEGATE
-};
+  ADD,   				//По умолчанию 0
+  REMOVE,               //По умолчанию 1
+  NEGATE				//По умолчанию 2
+};						// ADD < REMOVE < NEGATE
 
 void ProcessRequest(
     set<int>& numbers,
@@ -2045,4 +2143,175 @@ ProcessRequest(numbers, RequestType::ADD, 8);
 ProcessRequest(numbers, RequestType::NEGATE, 8);
 ProcessRequest(numbers, RequestType::REMOVE, -8);
 ```
+
+***Чем же так хороши enum'ы?*** 
+
+1. Получаем новый тип - тезка enum'a, который можно использовать в качестве параметра функции.
+
+2. Значения типа должны предваряться префиксом с именем (в данном случае `RequestType::`), поэтому вызов `ProcessRequest(numbers, ADD, 8)` не сработает, следовательно `ADD` свободная операция.
+
+3. Значения типа можно сравнивать с помощью `!=`, `==`, а также `<` и `>`. Предпоследнее позволяет использовать `enum'ы` в качестве ключей словарей и элементов множества.
+
+4.  `static_cast<RequestType>(0) == RequestType::ADD`.
+
+5. `int32_t x = SomeEnum::VALUE;` - **ошибка компиляции**
+
+6.  `enum'ы` очень удобно использовать в `switch`-конструкциях:
+
+   ```C++
+   enum class RequestType {
+     ADD,
+     REMOVE,
+     NEGATE
+   };
+   
+   void ProcessRequest(
+       set<int>& numbers,
+       RequestType request_type,
+       int request_data) {
+     switch (request_type) {
+     case RequestType::ADD:
+       numbers.insert(request_data);
+       break;
+     case RequestType::REMOVE:
+       numbers.erase(request_data);
+       break;
+     case RequestType::NEGATE:
+       if (numbers.count(request_data) == 1) {
+         numbers.erase(request_data);
+         numbers.insert(-request_data);
+       }
+       break;
+     default:
+       cout << "Unknown request" << endl;
+     }
+   }
+   ```
+
+
+### Кортежи и пары
+
+#### Кортежи
+
+**Кортеж** - структура данных, позволяющая определить несколько типов данных в один. Пример:
+
+```C++
+#include <iostream>
+#include <tuple>
+
+using namespace std;
+
+int main(void) {
+  //tuple t = make_tuple(1, "Hello!", 7); В C++17
+  tuple<const int, const string, const int> t = make_tuple(1, "Hello!", 7); //Сработает в кортеже сами элементы
+  cout << get<1>(t) << endl;
+  return 0;
+}
+/*Output:
+ *Hello!
+ */	
+```
+
+**Отличия `tie` и `make_tuple`**
+
+- `tie` - создает кортеж из ссылок:
+
+  ```C++
+  auto t = tie(7, "C++", true); // не сработает 
+  ```
+
+  ```C++
+  int x = 7;
+  string s = "C++";
+  bool b = true;
+  auto t = tie(x, s, b); //сработает в кортеже ссылки на элементы
+  ```
+
+- `make_tuple` - создает кортеж из самих значений
+
+  ```C++
+  auto t = make_tuple(7, "C++", true); //сработает в кортеже сами элементы
+  ```
+
+  ```C++
+  int x = 7;
+  string s = "C++";
+  bool b = true;
+  auto t = make_tuple(x, s, b); //Сработает в кортеже сами элементы
+
+#### Пары
+
+Кортеж из двух типов с удобным обращениям к элементам:
+
+```C++
+#include <iostream>
+#include <tuple>
+#include <utility>
+
+using namespace std;
+
+int main(void) {
+  pair<int, string> p(1, "Hello!"); 
+  cout << p.first << " " << p.second << endl;
+  return 0;
+}
+/*Output:
+ *1 Hello!
+ */
+```
+
+**Альтернативные способы создания**
+
+1.  `auto p = make_pair(7, "C++")`
+2. `pair p(7, "C++")` $\leftarrow$ в `C++17`
+
+**Давно забытое старое**
+
+В белом поясе мы пробовали итерироваться по `map` и там как раз и вылезали пары:
+
+```C++
+#include <iostream>
+#include <map>
+
+using namespace std;
+
+int main(void) {
+  map<int, string> digits = {{1, "one"}};
+  for (const pair<int, string>& e : digits) {
+      cout << e.first << " " << e.second << endl;
+  }
+  return 0;
+}
+/*Output:
+ *1 one
+ */	
+```
+
+#### Возврат нескольких значений из функции
+
+Пусть некая `foo()` возвращает кортеж, тогда удобно работать с ним так:
+
+````C++
+tuple<bool, string> foo();
+
+int main(void) {
+  bool x;
+  string s;
+  tie(x, s) = foo(); //tie(x, s) имеет тип tuple<bool&, string&> поэтому в x и s запишется то, что нам надо
+  cout << x " " << s << endl;
+}
+````
+
+ В `C++17` можно и **удобнее**:
+
+```C++
+tuple<bool, string> foo();
+
+int main(void) {
+  auto [x, s] = foo(); //распаковываем кортеж в x и s
+  cout << x " " << s << endl;
+}
+```
+
+
 
