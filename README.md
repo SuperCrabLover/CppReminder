@@ -1819,7 +1819,7 @@ ostream& operator<<(ostream& stream, const Rational& r) {
 }
 
 istream& operator>>(istream& stream, Rational& r);
-istream& operator >> (istream& is, Rational& r) {
+istream& operator>> (istream& is, Rational& r) {
   int n, d;
   char c;
 
@@ -2171,7 +2171,7 @@ ProcessRequest(numbers, RequestType::REMOVE, -8);
        int request_data) {
      switch (request_type) {
      case RequestType::ADD:
-       numbers.insert(request_data);
+       numbers.insert(request_data);	
        break;
      case RequestType::REMOVE:
        numbers.erase(request_data);
@@ -2314,4 +2314,114 @@ int main(void) {
 ```
 
 
+
+### Шаблоны функции
+
+#### Введение в шаблоны
+
+Определим универсальную функцию возведения в квадрат, которая принимает на вход любой тип с определенной операцией умножения самого на себя:
+
+```C++
+#include <iostream>
+using namespace std;
+
+template <typename T>
+T Sqr(T x) {
+  return x * x;
+}
+
+int main(void) {
+  cout << Sqr(2.5) << endl;  //6.25
+  cout << Sqr(2) << endl;    //4
+  return 0;
+}
+```
+
+А теперь определим для пары почти любых элементов шаблонное умножение:
+
+```C++
+#include <iostream>
+#include <utility>
+using namespace std;
+
+template <typename First, typename Second>
+pair<First, Second> operator*(const pair<First, Second>& lhs, const pair<First, Second>& rhs) {
+  //Определим переменные объявленных типов First и Second, а затем создадим из них пару
+  First f = lhs.first * rhs.first; 
+  Second s = lhs.second * rhs.second;
+  return make_pair(f, s);
+}
+
+template <typename T>
+T Sqr(T x) {
+  return x * x;
+}
+
+int main(void) {
+  cout << Sqr(2.5) << endl;  //6.25
+  cout << Sqr(2) << endl;    //4
+  auto p1 = make_pair(3.5, 4);
+  auto res = Sqr(p1);
+  cout << res.first << " " << res.second << endl; // 12.25 16
+  return 0;
+}
+```
+
+####  Универсальные функции вывода контейнеров в поток
+
+```C++
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <map>
+using namespace std;
+
+template <typename Collection> 
+string Join(const Collection& c, char d) {
+  stringstream ss;
+  bool first = true;
+  for (const auto& e : c) {
+    if (!first) {
+      ss << d << e;
+    } else {
+    first = false;
+    ss << e;
+    }
+  }
+  return ss.str();
+}
+
+template <typename First, typename Second>
+ostream& operator<<(ostream& out, const pair<First, Second> p) {
+  return out << '(' << p.first << "," << p.second << ')';
+} 
+
+template <typename Key, typename Value> 
+ostream& operator<<(ostream& out, const map<Key, Value> m) {
+  return out << '{' << Join(m, ',') << '}';
+}
+
+template <typename T>
+ostream& operator<<(ostream& out, const vector<T>& v) {
+  return out << '[' << Join(v, ',') << ']';
+}
+
+int main(void) {
+  vector<int> v = {1, 2, 3};
+  vector<double> v2 = {1, 2.2, 3};
+  vector<vector<int>> v3 = {{1, 2, 3}, {5, 6, 7, 8}};
+  map<int, string> m = {{1, "Hello "}, {2, "world! "}};
+  cout << v << endl;
+  cout << v2 << endl;
+  cout << v3 << endl;
+  cout << m << endl; 
+  return 0;
+}
+/*Output:
+ *[1,2,3]
+ *[1,2.2,3]
+ *[[1,2,3],[5,6,7,8]]
+ *{(1,Hello ),(2,world! )}
+ */
+```
 
