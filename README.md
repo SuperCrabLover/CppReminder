@@ -2425,3 +2425,48 @@ int main(void) {
  */
 ```
 
+#### Указание шаблонного параметра-типа
+
+Следующий пример вызовет **ошибку компиляции!**
+
+```C++
+#include <iostream>
+using namespace std;
+//В КОДЕ ОШИБКА, КОД НЕ КОМПИЛИРУЕТСЯ
+template <typename T>
+T Max(T a, T b) {
+  if (a < b) {
+    return b;
+  }
+  return a;
+}
+
+int main(void) {
+  cout << Max(2.3, 3) << endl;
+  return 0;
+}
+```
+
+Происходит это потому, что компилятор не понимает, который из типов `double` ($2.3$)​ и `int` ($3$​​​) выбрать в качестве шаблонного параметра `T`. Чтобы это исправить используют следующий приём, который работает и с функцией `max` стандартной библиотеки:
+
+```C++
+#include <iostream>
+using namespace std;
+
+template <typename T>
+T Max(T a, T b) {
+  if (a < b) {
+    return b;
+  }
+  return a;
+}
+
+int main(void) {
+  cout << Max<double>(2.3, 3) << endl; //Явно указали какой тип выбрать 
+  return 0;
+}
+/*Output:
+ *3
+ */
+```
+
