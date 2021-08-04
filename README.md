@@ -222,8 +222,30 @@
     return GetRank(lhs) < GetRank(rhs);
   }
   ```
-
   
+- Предотвращение дублирования кода с помощью объявления клички какому-то типу:
+
+  ```C++
+  #include "beautiful output.h"
+  
+  using Dictionary = map<char, set<string>>;
+  
+  int main(void) {
+      Dictionary a;
+      a['c'].insert("creator");
+      a['c'].insert("crab");
+      a['b'].insert("brain");
+      cout << a << endl;
+      return 0;
+  }
+  /*Output
+   *{(b,<brain>),(c,<crab,creator>)}
+   */
+  //P.S. beautiful output.h можно посмотреть в первой неделе жёлтого пояса в разделе "Универсальные функции вывода контейнеров в поток"
+  ```
+
+   
+
 
 ## Первая неделя Белого Пояса
 
@@ -2374,6 +2396,7 @@ int main(void) {
 #include <sstream>
 #include <vector>
 #include <map>
+#include <set>
 using namespace std;
 
 template <typename Collection> 
@@ -2392,19 +2415,25 @@ string Join(const Collection& c, char d) {
 }
 
 template <typename First, typename Second>
-ostream& operator<<(ostream& out, const pair<First, Second> p) {
+ostream& operator<<(ostream& out, const pair<First, Second>& p) {
   return out << '(' << p.first << "," << p.second << ')';
 } 
 
 template <typename Key, typename Value> 
-ostream& operator<<(ostream& out, const map<Key, Value> m) {
+ostream& operator<<(ostream& out, const map<Key, Value>& m) {
   return out << '{' << Join(m, ',') << '}';
+}
+
+template <typename E>
+ostream& operator<<(ostream& out, const set<E>& s) {
+  return out << '<' << Join(s, ',') << '>';
 }
 
 template <typename T>
 ostream& operator<<(ostream& out, const vector<T>& v) {
   return out << '[' << Join(v, ',') << ']';
 }
+
 
 int main(void) {
   vector<int> v = {1, 2, 3};
@@ -2469,4 +2498,56 @@ int main(void) {
  *3
  */
 ```
+
+### Вторая Неделя Жёлтого Пояса
+
+#### Простейший способ Юнит-Тестирования
+
+```c++
+#include <iostream>
+//Добавляем библиотеку для ассертов
+#include <cassert>
+using namespace std;
+
+int Sum(int a, int b) {
+    return a + b;
+}
+
+void TestSum() {
+    //Непосредственное тестирование
+    assert(Sum(2, 3) == 5); 
+    assert(Sum(-2, 3) == 1);
+    assert(Sum(2, -3) == -1);
+    assert(Sum(-2, -3) == -5);
+    assert(Sum(3, -3) == 0);
+    assert(Sum(4, -3) == 1);
+    assert(Sum(0, -3) == -3);
+    assert(Sum(3, 0) == 3);
+    cout << "TestSum(): OK" << endl;
+}
+
+int main(void) {
+    TestSum();
+    return 0;
+}
+/*Output:
+ *TestSum(): OK
+ */
+```
+
+Пусть теперь функция `int Sum(int a, int b)` написана неправильно:
+
+```C++
+int Sum(int a, int b) {
+    return a - b;
+}
+```
+
+Тогда в консоли мы увидим
+
+```bash
+<programm_name_here>: <file_name_here>.cpp:13: void TestSum(): Assertion `Sum(2, 3) == 5' failed.
+```
+
+
 
