@@ -2549,5 +2549,104 @@ int Sum(int a, int b) {
 <programm_name_here>: <file_name_here>.cpp:13: void TestSum(): Assertion `Sum(2, 3) == 5' failed.
 ```
 
+#### Улучшенный способ Юнит-Тестирования
 
+```C++
+#include <iostream>
+#include <sstream>
+#include <exception>
+using namespace std;
+
+//Два шаблонных типа, чтобы сравнивать, например, int и int_64t 
+//Контракт шаблона : шаблонный тип можно вывести с помощью <<
+template <typename T, typename U>
+void AssertEqual (const T& t, const U& u, const string& hint) {
+  if (t != u) {
+    ostringstream os;
+    os << "Assert failed: " << t << " != " << u << " Hint: " << hint << " ";
+    throw runtime_error(os.str());
+  }
+}
+
+//Для сохранения стиля assert(bool b) напишем функцию Assert:
+void Assert(bool b, const string& hint) {
+  AssertEqual(b, true, hint);
+}
+
+int main(void) {
+  try {
+    AssertEqual(2, 3, "Int equality");
+  } catch (const exception& e) {
+    cout << e.what() << endl;
+  }
+  try {
+    Assert(2 == 3, "Int equality 2");
+  } catch (const exception& e) {
+    cout << e.what() << endl;
+  }
+  return 0;
+}
+/*Output
+ *Assert failed: 2 != 3 Hint: Int equality 
+ *Assert failed: 0 != 1 Hint: Int equality 2 
+ */
+```
+
+Теперь, в случае срабатывании **assert'a**, исключение можно перехватить и продолжить выполнение тестов. Строка `hint` подсказывает какой из тестов в программе упал. Можно заметить, что в функции `main` происходит **дублирование кода** с `try - catch` конструкциями, чтобы этого не происходило можно написать новую функцию, которая будет запускать наши тесты:
+
+```C++
+#include <iostream>
+#include <sstream>
+#include <exception>
+using namespace std;
+
+template <typename T, typename U> void AssertEqual (const T& t, const U& u, const string& hint);
+void Assert(bool b, const string& hint);
+int Sum (int a, int b);
+void Simple_Test();
+template <typename TestFunc> void RunTest(TestFunc func, const string& func_name);
+
+//Два шаблонных типа, чтобы сравнивать, например, int и int_64t
+//Контракт шаблона : шаблонный тип можно вывести с помощью << 
+template <typename T, typename U>
+void AssertEqual (const T& t, const U& u, const string& hint) {
+  if (t != u) {
+    ostringstream os;
+    os << "Assert failed: " << t << " != " << u << " Hint: " << hint << " ";
+    throw runtime_error(os.str());
+  }
+}
+
+//Для сохранения стиля assert(bool b) напишем функцию Assert:
+void Assert(bool b, const string& hint) {
+  AssertEqual(b, true, hint);
+}
+
+int Sum (int a, int b) {
+  return a + b - 1;
+}
+
+void Simple_Test() {
+  AssertEqual(Sum(2, 3), 5, "Sum of 2 and 3");
+  Assert(Sum(3, 0) == 3, "Sum of 3 and 0");
+  cout << "Simple_Test OK" << endl;
+}
+
+template <typename TestFunc> 
+void RunTest(TestFunc func, const string& func_name) {
+  try {
+    func();
+  } catch (const exception& e) {
+    cout << func_name << " fail: " << e.what() << endl;
+  }
+}
+
+int main(void) {
+  RunTest(Simple_Test, "Simple_Test");
+  return 0;
+}
+/*Output
+ *Simple_Test fail: Assert failed: 4 != 5 Hint: Sum of 2 and 3  
+ */
+```
 
