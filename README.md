@@ -2629,15 +2629,16 @@ int Sum (int a, int b) {
 void Simple_Test() {
   AssertEqual(Sum(2, 3), 5, "Sum of 2 and 3");
   Assert(Sum(3, 0) == 3, "Sum of 3 and 0");
-  cout << "Simple_Test OK" << endl;
 }
 
 template <typename TestFunc> 
 void RunTest(TestFunc func, const string& func_name) {
   try {
     func();
+    //Успешное или неуспешное завершение тестирование будем отправлять в поток ошибок, чтобы не загромождать stdout
+    cerr << func_name << " OK" << endl;
   } catch (const exception& e) {
-    cout << func_name << " fail: " << e.what() << endl;
+    cerr << func_name << " fail: " << e.what() << endl;
   }
 }
 
@@ -2645,8 +2646,136 @@ int main(void) {
   RunTest(Simple_Test, "Simple_Test");
   return 0;
 }
-/*Output
+/*Output (stderr)
  *Simple_Test fail: Assert failed: 4 != 5 Hint: Sum of 2 and 3  
  */
+```
+
+Однако теперь **при возникновении ошибки тестирования наша программа не завершается**, а продолжает своё выполнение. Если бы после строки в функции `main` был бы остальной код, использующий `int Sum(int a, int b)`, то мы бы получили неверный ответ. Это **плохо** - ошибка в Юнит Тестировании должна быть *звонкой*! Исправим это "завернув" функцию `template <typename TestFunc> void RunTest(TestFunc func, const string& func_name)` в отдельный класс:
+
+```C++
+#include <iostream>
+#include <sstream>
+#include <exception>
+using namespace std;
+
+template <typename T, typename U> void AssertEqual (const T& t, const U& u, const string& hint);
+void Assert(bool b, const string& hint);
+int Sum (int a, int b);
+void Simple_Test();
+void Simple_Test2();
+void Simple_Test3();
+template <typename TestFunc> void RunTest(TestFunc func, const string& func_name);
+void TestAll();
+
+//Два шаблонных типа, чтобы сравнивать, например, int и int_64t
+//Контракт шаблона : шаблонный тип можно вывести с помощью << 
+template <typename T, typename U>
+void AssertEqual (const T& t, const U& u, const string& hint) {
+  if (t != u) {
+    ostringstream os;
+    os << "Assert failed: " << t << " != " << u << " Hint: " << hint << " ";
+    throw runtime_error(os.str());
+  }
+}
+
+//Для сохранения стиля assert(bool b) напишем функцию Assert:
+void Assert(bool b, const string& hint) {
+  AssertEqual(b, true, hint);
+}
+
+int Sum (int a, int b) {
+  return a + b - 1;
+}
+
+//Три простых теста для функции Sum
+void Simple_Test() {
+  AssertEqual(Sum(2, 3), 5, "Sum of 2 and 3");
+  Assert(Sum(3, 0) == 3, "Sum of 3 and 0");
+}
+
+void Simple_Test2() {
+  AssertEqual(Sum(-2, 3), 1, "Sum of -2 and 3");
+  Assert(Sum(-3, 0) == -3, "Sum of -3 and 0");
+}
+
+void Simple_Test3() {
+  AssertEqual(Sum(0, 0), 0, "Sum of 0 and 0");
+  Assert(Sum(-3, 3) == 0, "Sum of -3 and 3");
+}
+
+
+class TestRuner {
+private:
+  size_t fail_count = 0;
+
+public:
+  //Шаблонный метод классаЮ запускающий наши тесты и считающий количество упавших тестов
+  template <typename TestFunc> 
+  void RunTest(TestFunc func, const string& func_name) {
+    try {
+      func();
+      cerr << func_name << " OK" << endl;
+    } catch (const exception& e) {
+      cerr << func_name << " fail: " << e.what() << endl;
+      fail_count++;
+    }
+  }
+  
+  //Деструктор, который, в случае хотя бы одного упавшего теста, завершает работу программы.
+  ~TestRuner() {
+    if (fail_count > 0u) {
+      cerr << fail_count << " tests failed. Terminate" << endl;
+      exit(1);
+    }
+  }
+};
+
+//Функция, которая с помощью нового класса запускает все тесты
+void TestAll() {
+  TestRuner tr;
+  tr.RunTest(Simple_Test, "Simple_Test");
+  tr.RunTest(Simple_Test2, "Simple_Test2");
+  tr.RunTest(Simple_Test3, "Simple_Test3");
+  //В данной строчке объект TestRunner tr "разрушается" 
+}
+
+int main(void) {
+  TestAll();
+  //Код тут уже не выполнится, если хоть один тест упал
+  return 0;
+}
+/*Output (stderr)
+ *Simple_Test fail: Assert failed: 4 != 5 Hint: Sum of 2 and 3 
+ *Simple_Test2 fail: Assert failed: 0 != 1 Hint: Sum of -2 and 3 
+ *Simple_Test3 fail: Assert failed: -1 != 0 Hint: Sum of 0 and 0 
+ *3 tests failed. Terminate
+ */
+```
+
+#### Итоги
+
+***Как пользоваться?***
+
+Минимальный набор:
+
+```C++
+...
+
+void TestSmth() {
+  AssertEqual(a, b, hint);
+  ...
+}
+
+void TestAll() {
+  TestRunner tr;
+  //Написать сюда все тесты через tr.RunTest(func, func_name);
+  tr.RunTest(TestSmth, "TestSmth");
+  ...
+}
+
+int main(void) {
+  TestAll();
+}
 ```
 
