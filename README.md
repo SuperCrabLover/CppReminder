@@ -244,7 +244,45 @@
   //P.S. beautiful output.h можно посмотреть в первой неделе жёлтого пояса в разделе "Универсальные функции вывода контейнеров в поток"
   ```
 
-   
+- **Функция может быть объявлена несколько раз**
+
+- **Объявление и определение классов**
+
+  ```C++
+  #include <string>
+  using namespace std;
+  
+  //Объявление класса Human
+  class Human {
+  private:
+    size_t age;
+    string name; 
+  public:
+    Human(size_t _age, string _name);
+    
+    size_t GetAge() const;
+    
+    const string& GetName() const;
+  };
+  
+  //Определение методов класса
+  Human::Human(size_t _age, string _name) {
+    age = _age;
+    name = _name;
+  }
+  
+  size_t Human::GetAge() const {
+    return age;
+  }
+    
+  const string& Human::GetName() const {
+    return name;
+  } 
+  ```
+
+- Компиляция и её этапы
+
+  препроцессинг (#include, #define) $\rightarrow$ компиляция всех `.cpp` файлов в объектные файлы $\rightarrow$ компоновка (линковка) объектных файлов $\rightarrow$ ELF
 
 
 ## Первая неделя Белого Пояса
@@ -2778,4 +2816,105 @@ int main(void) {
   TestAll();
 }
 ```
+
+### Третья Неделя Жёлтого Пояса
+
+#### Правило одного определения
+
+Рассмотрим простую ситуацию:
+
+`test.cpp` $\leftarrow$​ `Header.h` $\rightarrow$ `Header.cpp`
+
+**Header.h:**
+
+```C++
+#pragma once
+
+int Sum(int a, int b);
+int Mul(int a, int b);
+```
+
+**Header.cpp**
+
+```C++
+#include "Header.h"
+
+int Sum (int a, int b) {
+  return a + b;
+}
+
+int Mul (int a, int b) {
+  return a * b;
+}
+```
+
+**test.cpp**
+
+```C++
+#include "Header.h"
+#include <iostream>
+using namespace std;
+
+int main(void) {
+  cout << "Sum 2 and 3 is: " << Sum(2, 3) << " Mul is: " << Mul(2, 3) << endl;
+  return 0;
+}
+
+/*Output:
+ *Sum 2 and 3 is: 5 Mul is: 6
+ */
+```
+
+И всё бы ничего, но вот наша прыть молодецкая не даёт нам покоя, и мы - зачем-то - хотим выполнить некий "ре-фак-торинг" нашего кода:
+
+**Header.h**
+
+```C++
+#pragma once
+
+//Заместо объявления функции написали её определение
+int Sum (int a, int b) {
+  return a + b;
+}
+
+int Mul(int a, int b);
+```
+
+**Header.cpp**
+
+```C++
+#include "Header.h"
+
+//Определение функции Sum тут нет, мы же не хотим нарушать правило одного определения, верно?
+
+int Mul (int a, int b) {
+  return a * b;
+}
+```
+
+**test.cpp**
+
+```C++
+#include "Header.h"
+#include <iostream>
+using namespace std;
+
+int main(void) {
+  cout << "Sum 2 and 3 is: " << Sum(2, 3) << " Mul is: " << Mul(2, 3) << endl;
+  return 0;
+}
+
+/*ERROR!:
+... в функции «Sum(int, int)»:
+.../Header.h:3: повторное определение «Sum(int, int)»; .../Header.h:3: здесь первое определение collect2: error: ld returned 1 exit status
+*/
+```
+
+Получили ошибку,  о которой заявил - **Внимание** - ЛИНКОВЩИК! Вот это дела! Как же так получается? Мы же определили `Sum` один раз, а ошибка на повторное определение!
+
+Вспомним архитектуру:
+
+`test.cpp` $\leftarrow$​ `Header.h` $\rightarrow$ `Header.cpp`
+
+Во время изменения кода мы добавили определение `Sum` в `Header.h`, затем препроцессор добавил это определение в два файла `.cpp`: `test.cpp` и `Header.cpp`. Затем наступил этап компиляции кода в двух этих `.cpp` файлах, после чего за дело взялся линковщих, который и обнаружил в двух разных объектных файлах два определения функции `Sum` и выдал нам ошибку! 
 
