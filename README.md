@@ -404,7 +404,40 @@ int main(void) {
  */
 ```
 
+### Указатель на функцию
 
+```C++
+void f(int, int);
+void f(int, int) {}
+
+int main() {
+  void(*pf)(int, int) = &f;
+  //Тип у переменной pf - void(*)(int, int)
+  return 0;
+}
+```
+
+### Выбор функции компилятором
+
+```C++
+#include <iostream>
+using namespace std;
+double f(double);
+int f(int);
+
+double f(double) {cout << 1 << endl; return 0;}
+int f(int) {cout << 2 << endl; return 0;}
+
+int main() {
+  int x = f(0.0); //Вызывается double f(double) несмотря на то что x имеет тип int
+  return 0;
+}
+/*Output:
+ *1
+ */
+```
+
+**Вывод**: возвращаемый тип не влияет на выбор функции - влияют аргументы
 
 
 ## Первая неделя Белого Пояса
