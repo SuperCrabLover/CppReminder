@@ -345,7 +345,10 @@ using namespace std;
 int main(void) {
   int a[100];
   int b[100];
-  a = b // В этом месте будет ошибка
+  int x = 0;
+  int *p = &x;
+  a = b; // В этом месте будет ошибка
+  a = p; // И в этом тоже
   return 0;
 }
 ```
