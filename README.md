@@ -3224,3 +3224,71 @@ int main(void) {
 
 #### Введение в итераторы
 
+*Итератор* - способ задать позицию в контейнере. Если у нас есть некий контейнер `c`, то чаще всего к его первому элементу можно обратиться в виде `begin(c)`, также можно обратиться к элементу, который находится **за последним элементом контейнера**, с помощью `end(c)`. Таким образом:
+
+![image-20210813153614401](/home/iskander/.config/Typora/typora-user-images/image-20210813153614401.png)
+
+**Итератор на примере вектора**
+
+```C++
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+using namespace std;
+
+//begin(vector_name) имеет тип vector<string>::iterator
+void PrintVect(vector<string>::iterator range_begin, vector<string>::iterator range_end) {
+  for (vector<string>::iterator it = range_begin;
+       it != range_end;
+       it++)
+  {
+    //it++ позволяет перейти к следующему элементу вектора
+    //Чтобы получить значение по итератору нужно напечатать звёздочку
+    cout << *it << " ";
+  }
+  cout << "\n";
+}
+
+int main() {
+  vector<string> v = {"Hi", "My", "Name", "Is", "Slim", "Shady"};
+  PrintVect(begin(v), end(v));
+  return 0;
+}
+/*Output:
+ *Hi My Name Is Slim Shady 
+ */
+```
+
+Считается, что итераторы более универсальны, чем `range-based for`. Например, с помощью итераторов довольно просто вывести вектор в обратном порядке:
+
+```C++
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+using namespace std;
+
+int main() {
+  vector<string> v = {"Hi", "My", "Name", "Is", "Slim", "Shady"};
+  vector<string>::iterator it = end(v);
+  while (it != begin(v)) {
+    it--;
+    cout << *it << ' ';
+  }
+  cout << "\n";
+  return 0;
+}
+/*Output:
+ *Shady Slim Is Name My Hi
+ */
+```
+
+Тем не менее, `range-based for` использовать предпочтительней, поскольку код будет более читабельным. 
+
+#### Что НЕЛЬЗЯ делать с итераторами?
+
+1. `*end(c)`  - undefined behavior, так как `end(c)` это не последний элемент `c`, а нечто после него.
+2. `auto it = end(c); ++it;`- undefined behavior, можем залезть не в свою память.
+3. `auto it = begin(c); --it;`- undefined behavior, можем залезть не в свою память.
+
