@@ -3333,3 +3333,31 @@ int main() {
 
 #### Использование итераторов в алгоритмах и контейнерах
 
+##### `insert`
+
+Пусть есть вектор целых чисел `v`, а `it` его итератор
+
+- `v.insert(it, 5)` вставляем $5$​ **перед** `it` (то есть на позицию `it`)
+- `v.insert(it, range_beging, range_end)` вставляем **перед** `it` целый диапазон `[range_begin, range_end)`   
+- `v.insert(it, {1, 2, 3})`   вставляем **перед** `it` сразу несколько элементов
+
+##### `remove_if`
+
+`auto it = remove_if(range_begin_v, range_end_v, [](...){...});` Перемещает все элементы, на которых лямбда функция вернула `true`, в конец вектора, проходясь по `[range_begin_v, range_end_v)`, и возвращает, то, что должно стать концом нового вектора. Пример:
+
+```C++
+#include "UnitTestFrame.h"
+#include <algorithm>
+using namespace std;
+
+int main(void) {
+  vector<int> v = {1, 2, 3, 4, 5};
+  auto it = remove_if(begin(v), end(v), [](int x){return (x < 3);});
+  v.erase(it, end(v));
+  cout << v << endl;
+}
+/*Output:
+ *[3, 4, 5]
+ */
+```
+
